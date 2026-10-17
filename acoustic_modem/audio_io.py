@@ -7,7 +7,8 @@ import sys
 import numpy as np
 
 
-def _sounddevice():
+def sounddevice_module():
+    """Import sounddevice lazily so the rest of the package works without audio."""
     try:
         import sounddevice as sd
     except Exception as exc:  # pragma: no cover - depends on host audio stack
@@ -19,7 +20,7 @@ def _sounddevice():
 
 
 def list_devices() -> str:
-    sd = _sounddevice()
+    sd = sounddevice_module()
     devices = sd.query_devices()
     lines = []
     for index, device in enumerate(devices):
@@ -37,7 +38,7 @@ def resolve_device(spec: str | int | None, *, kind: str) -> int | None:
         return None
     if isinstance(spec, int) or str(spec).isdigit():
         return int(spec)
-    sd = _sounddevice()
+    sd = sounddevice_module()
     wanted = str(spec).lower()
     key = "max_input_channels" if kind == "input" else "max_output_channels"
     matches = [
@@ -57,15 +58,21 @@ def resolve_device(spec: str | int | None, *, kind: str) -> int | None:
     return device
 
 
-def default_input_name() -> str:
-    sd = _sounddevice()
+def device_name(index: int | None, *, kind: str) -> str:
+    """Human-readable name for a resolved device, or the system default."""
+    sd = sounddevice_module()
     try:
-        index = sd.default.device[0]
+        if index is None:
+            index = sd.default.device[0 if kind == "input" else 1]
         if index is None or index < 0:
             return "system default"
         return sd.query_devices(index)["name"]
     except Exception:
         return "system default"
+
+
+def default_input_name() -> str:
+    return device_name(None, kind="input")
 
 
 def rms_level(block: np.ndarray) -> float:

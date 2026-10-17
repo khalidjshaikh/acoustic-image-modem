@@ -36,6 +36,9 @@ dashboard, pixel by pixel, as each band arrives.
 - `acoustic-receive` — listens to the microphone and serves a local dashboard.
   The browser draws each band in a moving pixel-scan, so you can watch the image
   materialize while the transfer is audible.
+- `acoustic-loopback` — plays test chirps and one modem packet through the
+  speaker, records them with the microphone, and reports whether the audio path
+  is working before you attempt a transfer.
 - A custom OFDM physical layer with chirp sync, pilot phase tracking,
   frequency-diversity QPSK, 48-byte Reed–Solomon parity per 255-byte block, bit
   interleaving, and CRC32 framing.
@@ -136,6 +139,60 @@ acoustic-receive --wav transmission.wav --no-browser
 
 Then open <http://127.0.0.1:8765/> to watch the decoded bands reveal.
 
+### Verify the speaker and microphone
+
+Before a real transfer, check the audio hardware with an acoustic loopback. The
+command plays a few chirps through the speaker, records them with the
+microphone, and then sends one small modem packet through the same path:
+
+```bash
+acoustic-loopback
+```
+
+A successful run looks like this:
+
+```
+  ACOUSTIC LOOPBACK  /  speaker -> microphone
+  --------------------------------------------------------
+  output      MacBook Air Speakers
+  input       MacBook Air Microphone
+  probe       3 chirps + 1 modem packet  (4.0 s)
+  level       0.05 · threshold 0.19
+  --------------------------------------------------------
+  Playing now; keep the room quiet and do not mute the speaker.
+
+  chirps      4/4 heard · peak correlation 0.72
+  timing      first chirp at +206 ms (device + air delay)
+  level       peak -1.7 dBFS · RMS -21.5 dBFS · SNR 32 dB
+  packet      decoded 301 B · header and CRC ok
+
+  PASS  the microphone hears the speaker, and the modem packet decoded.
+```
+
+Useful options:
+
+```bash
+acoustic-loopback --no-packet              # quick chirp-only check (~2.8 s)
+acoustic-loopback --wav loopback.wav       # keep the microphone capture
+acoustic-loopback --device "MacBook Air"   # pick input and output by name
+acoustic-loopback --input-device 2 --output-device 4
+acoustic-loopback --volume 0.2 --threshold 0.12
+```
+
+The test is fully acoustic: use the speakers, not headphones. The default
+loopback volume is deliberately low (`0.05`) because a microphone next to its
+own speaker clips easily; raise it in a noisy room. If the reported input level
+is above `0 dBFS`, lower `--volume` until the clipping warning disappears. A
+`FAIL` on the chirps usually means the output is muted, the wrong devices are
+selected, or the threshold is too high for the room. If the chirps pass but the
+packet fails, try moving the devices closer or adjusting `--volume`.
+
+To run this as an opt-in pytest (it really plays audio):
+
+```bash
+ACOUSTIC_LOOPBACK=1 pytest -m hardware
+```
+
 ## Tuning the room
 
 The modem is designed for ordinary laptop speakers and microphones at
@@ -192,6 +249,7 @@ acoustic_modem/
   dsp.py          chirp, OFDM modulation/demodulation, sync and equalization
   send.py         transmitter CLI
   receive.py      microphone receiver CLI
+  loopback.py     speaker -> microphone self-test
   webui.py        Flask + SSE dashboard
   templates/
     receiver.html pixel-reveal canvas interface

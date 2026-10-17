@@ -352,6 +352,17 @@ def _local_norm_correlation(signal: np.ndarray) -> np.ndarray:
     return corr / denom
 
 
+def normalized_chirp_correlation(audio: np.ndarray) -> np.ndarray:
+    """Return the normalized matched-filter response for the sync chirp.
+
+    Index ``i`` is the response for a chirp starting at sample ``i``.  The
+    values are in ``[0, 1]`` for a clean recording, independent of gain, which
+    makes them useful for signal-presence diagnostics as well as sync.
+    """
+    signal = np.asarray(audio, dtype=np.float64)
+    return np.abs(_local_norm_correlation(signal))
+
+
 def find_sync_peaks(
     audio: np.ndarray,
     *,

@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 acoustic-send = "acoustic_modem.send:main"
 acoustic-receive = "acoustic_modem.receive:main"
+acoustic-loopback = "acoustic_modem.loopback:main"
 
 [dependency-groups]
 dev = ["pytest>=8.0"]
@@ -30,3 +31,6 @@ packages = ["acoustic_modem"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "hardware: needs a real speaker and microphone (set ACOUSTIC_LOOPBACK=1)",
+]
