@@ -1,0 +1,32 @@
+[project]
+name = "acoustic-image-modem"
+version = "0.1.0"
+description = "A one-way acoustic OFDM modem that sends images, row band by row band, through the air."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pillow>=10.0",
+    "sounddevice>=0.5",
+    "flask>=3.0",
+    "reedsolo>=1.7",
+]
+
+[project.scripts]
+acoustic-send = "acoustic_modem.send:main"
+acoustic-receive = "acoustic_modem.receive:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["acoustic_modem"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
